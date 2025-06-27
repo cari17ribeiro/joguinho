@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Joguinho Romântico</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background-color: #ffe6f0;
+      font-family: Arial, sans-serif;
+      overflow-x: hidden;
+    }
+    /* Para garantir que o canvas ocupe toda a tela em celular e pc */
+    canvas {
+      display: block;
+      margin: 0 auto;
+      max-width: 100vw;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+<script>
+  let vitu, menina, fundo, coracaoImg;
+  let vituX, vituY;
+  const escalaBase = 0.4;
+
+  let chegou = false;
+  let jogoIniciado = false;
+  let fase = "captura";
+
+  let coracoes = [];
+  let coracoesCapturados = 0;
+
+  let botaoResposta1, botaoResposta2, botaoResposta3;
+  let botaoInicio, botaoCodigo;
+  let inputCodigo;
+  let perguntaDiv;
+
+  function preload() {
+    vitu = loadImage('https://i.imgur.com/sJEPuUh.png');
+    menina = loadImage('https://i.imgur.com/1cFq5Mv.png');
+    fundo = loadImage('https://i.imgur.com/67u8L7r.jpeg');
+    coracaoImg = loadImage('https://i.imgur.com/F0PTPOg.png');
+  }
+
+  function setup() {
+    // Cria canvas responsivo conforme o tamanho da janela
+    createCanvas(windowWidth * 0.95, windowHeight * 0.7);
+    imageMode(CENTER);
+    ajustarPosicoesIniciais();
+    iniciarMiniGameCoracoes();
+  }
+
+  function ajustarPosicoesIniciais() {
+    // Atualiza as posições iniciais do personagem com base no tamanho do canvas
+    const escala = escalaBase * (width / 800); // escala proporcional à largura da tela (base 800px)
+    vituX = width * 0.1;
+    vituY = height - (vitu.height * escala) / 2 - 10;
+  }
+
+  function windowResized() {
+    // Quando redimensionar a janela, ajusta canvas e posições
+    resizeCanvas(windowWidth * 0.95, windowHeight * 0.7);
+    ajustarPosicoesIniciais();
+    reposicionarElementos();
+  }
+
+  function reposicionarElementos() {
+    // Atualiza posição dos botões e inputs dinamicamente para centralizar e ficar responsivo
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    if (perguntaDiv) {
+      perguntaDiv.position(centerX - perguntaDiv.width / 2, centerY - 50);
+    }
+
+    if (botaoResposta1) {
+      botaoResposta1.position(centerX - 230 * (width / 800), centerY + 40);
+    }
+    if (botaoResposta2) {
+      botaoResposta2.position(centerX - 50 * (width / 800), centerY + 40);
+    }
+    if (botaoResposta3) {
+      botaoResposta3.position(centerX + 130 * (width / 800), centerY + 40);
+    }
+    if (inputCodigo) {
+      inputCodigo.position(centerX - 100 * (width / 800), centerY);
+      inputCodigo.size(200 * (width / 800));
+    }
+    if (botaoCodigo) {
+      botaoCodigo.position(centerX + 110 * (width / 800), centerY);
+    }
+    if (botaoInicio) {
+      botaoInicio.position(centerX - 140 * (width / 800), centerY + 60);
+      botaoInicio.style('font-size', `${18 * (width / 800)}px`);
+      botaoInicio.style('padding', `${10 * (width / 800)}px ${20 * (width / 800)}px`);
+    }
+  }
+
+  function iniciarMiniGameCoracoes() {
+    coracoes = [];
+    for (let i = 0; i < 5; i++) {
+      coracoes.push({
+        x: random(50, width - 50),
+        y: random(50, height - 100),
+        vx: random(-1.5, 1.5),
+        vy: random(-1.5, 1.5),
+        visivel: true
+      });
+    }
+    coracoesCapturados = 0;
+  }
+
+  function mousePressed() {
+    if (fase === "captura") {
+      for (let i = 0; i < coracoes.length; i++) {
+        let c = coracoes[i];
+        if (c.visivel && dist(mouseX, mouseY, c.x, c.y) < 30 * (width / 800)) {
+          c.visivel = false;
+          coracoesCapturados++;
+          if (coracoesCapturados >= 3) {
+            fase = "pergunta";
+            iniciarPergunta();
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  function iniciarPergunta() {
+    if (perguntaDiv) perguntaDiv.remove();
+    if (botaoResposta1) botaoResposta1.remove();
+    if (botaoResposta2) botaoResposta2.remove();
+    if (botaoResposta3) botaoResposta3.remove();
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    perguntaDiv = createDiv('');
+    perguntaDiv.style('font-size', `${24 * (width / 800)}px`);
+    perguntaDiv.style('color', '#950040');
+    perguntaDiv.style('font-family', 'sans-serif');
+    perguntaDiv.style('text-align', 'center');
+    perguntaDiv.position(centerX - 210 * (width / 800), centerY - 50);
+
+    const botaoVoce = createButton('Você');
+    botaoVoce.parent(perguntaDiv);
+    botaoVoce.style('font-size', `${24 * (width / 800)}px`);
+    botaoVoce.style('color', '#950040');
+    botaoVoce.style('background', 'none');
+    botaoVoce.style('border', 'none');
+    botaoVoce.style('font-family', 'inherit');
+    botaoVoce.style('padding', '0');
+    botaoVoce.style('margin', '0 5px 0 0');
+    botaoVoce.style('cursor', 'pointer');
+
+    botaoVoce.mousePressed(() => {
+      perguntaDiv.remove();
+      botaoResposta1.hide();
+      botaoResposta2.hide();
+      botaoResposta3.hide();
+      fase = "codigo";
+      iniciarCodigoSecreto();
+    });
+
+    const spanTexto = createSpan(' sabe o que sua namorada mais gosta?');
+    spanTexto.parent(perguntaDiv);
+
+    // Botões falsos
+    botaoResposta1 = createButton('Cookie de maracujá');
+    botaoResposta2 = createButton('Trufa chocolate ruby');
+    botaoResposta3 = createButton('Waffle');
+
+    botaoResposta1.position(centerX - 230 * (width / 800), centerY + 40);
+    botaoResposta2.position(centerX - 50 * (width / 800), centerY + 40);
+    botaoResposta3.position(centerX + 130 * (width / 800), centerY + 40);
+
+    styleBotao(botaoResposta1);
+    styleBotao(botaoResposta2);
+    styleBotao(botaoResposta3);
+
+    botaoResposta1.mousePressed(() => respostaErrada());
+    botaoResposta2.mousePressed(() => respostaErrada());
+    botaoResposta3.mousePressed(() => respostaErrada());
+  }
+
+  function respostaErrada() {
+    alert("Hmm... tenta de novo 😅");
+  }
+
+  function iniciarCodigoSecreto() {
+    if (inputCodigo) inputCodigo.remove();
+    if (botaoCodigo) botaoCodigo.remove();
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    inputCodigo = createInput('');
+    inputCodigo.attribute('placeholder', 'Digite a resposta');
+    inputCodigo.position(centerX - 100 * (width / 800), centerY);
+    inputCodigo.size(200 * (width / 800));
+
+    botaoCodigo = createButton('Enviar');
+    botaoCodigo.position(centerX + 110 * (width / 800), centerY);
+    styleBotao(botaoCodigo);
+
+    botaoCodigo.mousePressed(() => {
+      const resposta = inputCodigo.value().trim().toLowerCase();
+      if (resposta === "coisinhas") {
+        inputCodigo.hide();
+        botaoCodigo.hide();
+        fase = "pronto";
+        iniciarBotaoFinal();
+      } else {
+        alert("Quase! Pensa naquela palavrinha que sempre falamos quando estamos com a outra fome 😋");
+      }
+    });
+  }
+
+  function iniciarBotaoFinal() {
+    if (botaoInicio) botaoInicio.remove();
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    botaoInicio = createButton('Clique aqui para encontrar seu amor 💘');
+    botaoInicio.position(centerX - 140 * (width / 800), centerY + 60);
+    botaoInicio.style('font-size', `${18 * (width / 800)}px`);
+    botaoInicio.style('padding', `${10 * (width / 800)}px ${20 * (width / 800)}px`);
+    botaoInicio.style('background-color', '#ff8fa3');
+    botaoInicio.style('border', 'none');
+    botaoInicio.style('border-radius', '10px');
+    botaoInicio.style('color', 'white');
+
+    botaoInicio.mousePressed(() => {
+      jogoIniciado = true;
+      fase = "jogo";
+      botaoInicio.hide();
+    });
+  }
+
+  function styleBotao(botao) {
+    const scale = width / 800;
+    botao.style('font-size', `${16 * scale}px`);
+    botao.style('padding', `${8 * scale}px ${16 * scale}px`);
+    botao.style('margin', `${4 * scale}px`);
+    botao.style('background-color', '#ff8fa3');
+    botao.style('border', 'none');
+    botao.style('border-radius', `${8 * scale}px`);
+    botao.style('color', 'white');
+  }
+
+  function draw() {
+    background(255, 230, 240);
+
+    if (fase === "captura") {
+      textAlign(CENTER);
+      textSize(24 * (width / 800));
+      fill(150, 0, 80);
+      text('Capture 3 corações', width / 2, 50 * (height / 400));
+
+      for (let c of coracoes) {
+        if (c.visivel) {
+          c.x += c.vx;
+          c.y += c.vy;
+          if (c.x < 20 || c.x > width - 20) c.vx *= -1;
+          if (c.y < 20 || c.y > height - 20) c.vy *= -1;
+          image(coracaoImg, c.x, c.y, 40 * (width / 800), 40 * (width / 800));
+        }
+      }
+
+      textSize(18 * (width / 800));
+      text(`Corações capturados: ${coracoesCapturados}/3`, width / 2, height - 30);
+    }
+    else if (fase === "codigo") {
+      textAlign(CENTER);
+      textSize(24 * (width / 800));
+      fill(150, 0, 80);
+      text('Dica: Tô com fome 🍽️', width / 2, height / 2 - 40);
+    }
+    else if (fase === "jogo" && jogoIniciado) {
+      imageMode(CORNER);
+      image(fundo, 0, 0, width, height);
+
+      imageMode(CENTER);
+      const escala = escalaBase * (width / 800);
+      image(vitu, vituX, vituY, vitu.width * escala, vitu.height * escala);
+      image(menina, width * 0.875, vituY, menina.width * escala, menina.height * escala);
+
+      if (!chegou) {
+        if (keyIsDown(RIGHT_ARROW)) {
+          vituX += 3 * (width / 800);
+        }
+        if (keyIsDown(LEFT_ARROW)) {
+          vituX -= 3 * (width / 800);
+        }
+      }
+
+      if (vituX > width * 0.8) {
+        chegou = true;
+      }
+
+      if (chegou) {
+        fill(255, 100, 150);
+        textSize(24 * (width / 800));
+        textAlign(CENTER);
+        text("Se encontrar com você sempre faz meu coração sorrir, Jaja to ai 💖", width / 2, 80 * (height / 400));
+      }
+    }
+    else if (fase === "pronto") {
+      textAlign(CENTER);
+      textSize(24 * (width / 800));
+      fill(150, 0, 80);
+      text('Eu fiz um joguinho pro meu amor, isso foi divertido', width / 2, height / 2 - 60);
+    }
+  }
+</script>
+</body>
+</html>
